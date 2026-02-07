@@ -1,0 +1,17 @@
+{
+  "description": "Rails convention validation hooks - strict mode blocks writes that violate Rails naming conventions",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/validate-rails-conventions.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

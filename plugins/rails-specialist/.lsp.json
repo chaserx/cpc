@@ -1,0 +1,18 @@
+{
+  "ruby": {
+    "command": "ruby-lsp",
+    "args": [],
+    "description": "Ruby Language Server Protocol (LSP) for code analysis, autocompletion, and error checking.",
+    "extensionToLanguage": {
+      ".rb": "ruby",
+      ".erb": "erb",
+      ".rake": "ruby",
+      ".gemspec": "ruby",
+      ".ru": "ruby"
+    },
+    "transport": "stdio",
+    "initializationOptions": {},
+    "settings": {},
+    "maxRestarts": 3
+  }
+}

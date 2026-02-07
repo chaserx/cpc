@@ -1,0 +1,15 @@
+{
+  "name": "rails-specialist",
+  "version": "0.1.0",
+  "description": "Rails framework specialist with agents and skills for building, testing, and debugging. Integrates Rails MCP server and Ruby LSP for comprehensive Rails development support.",
+  "author": {
+    "name": "Chase Southard",
+    "email": "chase@southard.dev",
+    "url": "https://southard.dev"
+  },
+  "repository": "https://github.com/chaserx/claude-plugin-compendium/",
+  "category": "development",
+  "homepage": "https://github.com/chaserx/claude-plugin-compendium/tree/main/plugins/rails-specialist",
+  "tags": ["rails", "ruby", "active-record", "rspec", "minitest", "hotwire", "turbo"],
+  "license": "MIT"
+}

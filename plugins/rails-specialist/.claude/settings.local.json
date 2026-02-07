@@ -1,0 +1,7 @@
+{
+  "enabledMcpjsonServers": [
+    "rails-mcp-server",
+    "ruby-lsp"
+  ],
+  "enableAllProjectMcpServers": true
+}
