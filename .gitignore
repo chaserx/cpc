@@ -1,2 +1,14 @@
-*.DS_Store
-.claude/
+# Local settings
+.claude/*.local.md
+.claude/settings.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
