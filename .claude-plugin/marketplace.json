@@ -1,0 +1,22 @@
+{
+  "name": "claude-plugin-compendium",
+  "description": "Collection of Claude Code plugins",
+  "owner": {
+    "name": "Chase Southard",
+    "email": "chase@southard.dev"
+  },
+  "plugins": [
+    {
+      "name": "rails-specialist",
+      "description": "Claude Code plugin focused on Ruby on Rails development",
+      "source": "./plugins/rails-specialist",
+      "author": {
+        "name": "Chase Southard",
+        "email": "chase@southard.dev"
+      },
+      "category": "development",
+      "homepage": "https://github.com/chaserx/claude-plugin-compendium/tree/main/plugins/rails-specialist",
+      "tags": ["rails", "ruby", "active-record", "rspec", "minitest", "hotwire", "turbo"]
+    }
+  ]
+}
