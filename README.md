@@ -1,4 +1,4 @@
-> **Early Stage Project** — This project is new and has not been extensively validated or tested. Agentic coding workflows evolve rapidly, and some patterns here may need updating. Use with caution. Feedback is welcome — please [open an issue](issues) to report problems or suggest improvements.
+> **Early Stage Project** — This project is new and has not been extensively validated or tested. Agentic coding workflows evolve rapidly, and some patterns here may need updating. Use with caution. Feedback is welcome — please [open an issue](https://github.com/chaserx/cpc/issues/new) to report problems or suggest improvements.
 
 # Claude Plugin Compendium
 
@@ -14,7 +14,7 @@ A collection of [Claude Code Plugins](https://code.claude.com/docs/en/plugins) f
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
 - Node.js (for rails-mcp-server)
-- [mise](https://mise.jdx.dev/) with Ruby installed (for ruby-lsp and Rails commands)
+- Ruby, Bundler, and Rails installed (for ruby-lsp and Rails commands)
 - Ruby on Rails 7+ project
 
 ## Repository Structure
@@ -26,7 +26,7 @@ cpc/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── agents/           # 9 specialized agent definitions
-│       ├── skills/           # 9 skill knowledge documents
+│       ├── skills/           # 10 skill knowledge documents
 │       ├── commands/         # 4 slash commands
 │       ├── hooks/            # Convention validation hook
 │       ├── .mcp.json         # MCP server configuration
