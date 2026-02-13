@@ -1,7 +1,7 @@
 ---
 description: Rails console helper for debugging and exploration
 argument-hint: [ruby-code-or-query]
-allowed-tools: Read, Grep, Bash(mise:*, rails:*, bundle:*, ruby:*)
+allowed-tools: Read, Grep, Bash(rails:*, bundle:*, ruby:*)
 ---
 
 Help with Rails console operations.
@@ -75,3 +75,5 @@ If no specific query provided, ask what the user wants to accomplish:
 - Check database state
 
 Provide safe, read-only commands when possible. Warn before suggesting any data-modifying operations.
+
+Use the `--sandbox` option for safe exploration of data-modifying commands.

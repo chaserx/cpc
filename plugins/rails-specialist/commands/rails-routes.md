@@ -1,7 +1,7 @@
 ---
 description: Inspect and analyze Rails routes
 argument-hint: [controller-or-pattern]
-allowed-tools: Read, Grep, Bash(mise:*, rails:*, bundle:*)
+allowed-tools: Read, Grep, Bash(rails:*, bundle:*)
 ---
 
 Inspect Rails routes.
@@ -10,12 +10,12 @@ Filter pattern: $ARGUMENTS
 
 If a pattern is provided, filter routes:
 ```bash
-mise exec -- rails routes -g $ARGUMENTS
+rails routes -g $ARGUMENTS
 ```
 
 If no pattern, show all routes:
 ```bash
-mise exec -- rails routes
+rails routes
 ```
 
 After showing routes:

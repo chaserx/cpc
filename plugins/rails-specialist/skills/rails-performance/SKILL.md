@@ -1,126 +1,105 @@
 ---
-name: Rails Performance
-description: This skill should be used when the user asks about "Rails performance", "N+1 queries", "caching", "database optimization", "slow queries", "Redis", "Memcached", "background jobs", "profiling", or needs help optimizing Rails application performance. Provides guidance on performance optimization techniques.
-version: 0.1.0
+name: rails-performance
+description: This skill should be used when the user asks about "Rails performance", "N+1 queries", "caching strategies", "database optimization", "slow queries", "database indexes", "Redis", "Memcached", "background jobs", "profiling", "page load time", "memory usage", "counter cache", or "query optimization". Covers eager loading, indexing, caching, background job offloading, pagination, and profiling tools.
 ---
 
 # Rails Performance Optimization
 
 Guidance for optimizing Rails application performance including database queries, caching, background processing, and profiling.
 
-## N+1 Query Detection and Prevention
+## N+1 Query Prevention
 
-### Identifying N+1 Queries
-
-N+1 queries occur when loading associations in a loop:
+Detect N+1 queries by checking for association access inside loops. Resolve with eager loading:
 
 ```ruby
-# BAD: N+1 queries
-users = User.all
-users.each do |user|
-  puts user.posts.count  # Each iteration queries the database!
-end
-# Result: 1 query for users + N queries for posts
-```
+# BAD: N+1 — each iteration queries the database
+users.each { |u| u.posts.count }
 
-### Prevention with Eager Loading
-
-```ruby
-# includes: Separate query per association (most common)
+# GOOD: Eager load with includes
 users = User.includes(:posts)
 users.each { |u| u.posts.size }  # No additional queries
-
-# preload: Always separate queries
-users = User.preload(:posts, :comments)
-
-# eager_load: Single LEFT JOIN (needed for filtering)
-users = User.eager_load(:posts).where(posts: { published: true })
-
-# joins: For filtering only (doesn't load association)
-users = User.joins(:posts).where(posts: { published: true }).distinct
 ```
 
-### Bullet Gem for Detection
+| Method       | Query Style      | Use When                              |
+| ------------ | ---------------- | ------------------------------------- |
+| `includes`   | Auto (smart)     | Default choice for eager loading      |
+| `preload`    | Separate queries | Multiple has_many, avoiding cartesian |
+| `eager_load` | Single LEFT JOIN | Filtering/ordering by association     |
+| `joins`      | INNER JOIN       | Filtering only, not accessing data    |
+
+Enable strict loading in development to surface N+1 issues as errors:
 
 ```ruby
-# Gemfile
-gem 'bullet', group: :development
-
 # config/environments/development.rb
-config.after_initialize do
-  Bullet.enable = true
-  Bullet.alert = true
-  Bullet.bullet_logger = true
-  Bullet.console = true
-  Bullet.rails_logger = true
-end
+config.active_record.strict_loading_by_default = true
 ```
+
+For detailed eager loading patterns, Bullet gem setup, and strict loading configuration, read `references/eager-loading.md`.
 
 ## Database Optimization
 
-### Indexing Strategy
+### Indexing
+
+Add indexes for foreign keys, WHERE clause columns, ORDER BY columns, and composite queries:
 
 ```ruby
-# Add indexes for:
-# 1. Foreign keys
 add_index :posts, :user_id
-
-# 2. Columns used in WHERE clauses
 add_index :users, :email, unique: true
-add_index :posts, :published
-
-# 3. Columns used in ORDER BY
-add_index :posts, :created_at
-
-# 4. Composite indexes for multiple columns
-add_index :posts, [:user_id, :published]
 add_index :orders, [:status, :created_at]
 ```
 
-### Query Optimization
+### Query Patterns
 
 ```ruby
 # Select only needed columns
 User.select(:id, :name, :email)
 
-# Use pluck for array of values
+# Use pluck for arrays of values (skips model instantiation)
 User.where(active: true).pluck(:email)
 
-# Use exists? instead of count > 0
-User.where(email: email).exists?  # vs .count > 0
+# Check existence efficiently
+User.where(email: email).exists?  # Not .count > 0
 
-# Use find_each for large datasets
-User.find_each(batch_size: 1000) do |user|
-  user.process!
-end
+# Batch process large datasets
+User.find_each(batch_size: 1000) { |u| u.process! }
 
-# Use bulk operations
+# Bulk operations
 User.where(active: false).update_all(deleted_at: Time.current)
-User.insert_all([{ name: 'A' }, { name: 'B' }])
 ```
 
-### Explain Queries
+### Counter Caches
+
+Avoid repeated counting queries by maintaining a cached count column:
 
 ```ruby
-User.where(active: true).explain
-# EXPLAIN for SELECT * FROM users WHERE active = true
-
-# With PostgreSQL analyze
-User.connection.execute("EXPLAIN ANALYZE SELECT * FROM users WHERE active = true")
+class Post < ApplicationRecord
+  belongs_to :user, counter_cache: true
+end
+# user.posts_count reads the column — no query
 ```
+
+### Pagination
+
+Paginate all large collections to avoid loading entire tables:
+
+```ruby
+# Pagy (recommended — faster, lower memory)
+@pagy, @users = pagy(User.all, items: 25)
+
+# Kaminari
+@users = User.page(params[:page]).per(25)
+```
+
+For indexing strategies, EXPLAIN analysis, bulk operations, and advanced query patterns, read `references/database-optimization.md`.
 
 ## Caching Strategies
 
 ### Fragment Caching
 
-```erb
-<%# Basic fragment cache %>
-<% cache @article do %>
-  <%= render @article %>
-<% end %>
+Cache expensive view partials:
 
-<%# With explicit key %>
-<% cache ['v1', @article] do %>
+```erb
+<% cache @article do %>
   <%= render @article %>
 <% end %>
 
@@ -128,76 +107,25 @@ User.connection.execute("EXPLAIN ANALYZE SELECT * FROM users WHERE active = true
 <%= render partial: 'article', collection: @articles, cached: true %>
 ```
 
-### Russian Doll Caching
-
-```erb
-<% cache @article do %>
-  <article>
-    <h1><%= @article.title %></h1>
-
-    <% cache @article.author do %>
-      <div class="author">
-        <%= render @article.author %>
-      </div>
-    <% end %>
-
-    <% @article.comments.each do |comment| %>
-      <% cache comment do %>
-        <%= render comment %>
-      <% end %>
-    <% end %>
-  </article>
-<% end %>
-```
-
-Update `touch` for cache invalidation:
-```ruby
-class Comment < ApplicationRecord
-  belongs_to :article, touch: true
-end
-```
-
 ### Low-Level Caching
 
-```ruby
-# Read/write cache
-Rails.cache.fetch('all_posts', expires_in: 1.hour) do
-  Post.published.to_a
-end
+Cache arbitrary data with automatic expiration:
 
-# With race condition TTL
+```ruby
 Rails.cache.fetch('popular_posts', expires_in: 1.hour, race_condition_ttl: 10.seconds) do
   Post.popular.limit(10).to_a
 end
-
-# Manual operations
-Rails.cache.write('key', value, expires_in: 1.hour)
-Rails.cache.read('key')
-Rails.cache.delete('key')
-Rails.cache.exist?('key')
 ```
 
 ### HTTP Caching
 
+Return 304 Not Modified when content has not changed:
+
 ```ruby
-class ArticlesController < ApplicationController
-  def show
-    @article = Article.find(params[:id])
-
-    # Conditional GET with ETag
-    if stale?(@article)
-      respond_to do |format|
-        format.html
-        format.json { render json: @article }
-      end
-    end
-  end
-
-  def index
-    @articles = Article.published
-
-    # Cache for all users
-    expires_in 1.hour, public: true
+def show
+  @article = Article.find(params[:id])
+  if stale?(@article)
+    respond_to { |format| format.html }
   end
 end
 ```
@@ -205,184 +133,99 @@ end
 ### Cache Store Configuration
 
 ```ruby
-# config/environments/production.rb
-
-# Redis
+# Redis (recommended for production)
 config.cache_store = :redis_cache_store, {
   url: ENV['REDIS_URL'],
   expires_in: 1.day,
   namespace: 'myapp_cache'
 }
 
-# Memcached
-config.cache_store = :mem_cache_store, ENV['MEMCACHED_URL']
-
-# Solid Cache (Rails 7+)
+# Solid Cache (Rails 8+ — database-backed)
 config.cache_store = :solid_cache_store
 ```
 
+For Russian Doll caching, cache key design, invalidation patterns, and detailed store options, read `references/caching-strategies.md`.
+
 ## Background Jobs
 
-Move slow operations to background:
+Move slow operations out of the request cycle:
 
 ```ruby
-# Instead of synchronous processing
 class OrdersController < ApplicationController
   def create
     @order = Order.create!(order_params)
-
-    # Move to background job
     ProcessOrderJob.perform_later(@order.id)
     SendConfirmationEmailJob.perform_later(@order.id)
-
     redirect_to @order, notice: 'Order placed!'
   end
 end
-
-# Background job
-class ProcessOrderJob < ApplicationJob
-  queue_as :default
-
-  def perform(order_id)
-    order = Order.find(order_id)
-    PaymentProcessor.charge(order)
-    InventoryService.reserve(order)
-  end
-end
 ```
 
-## Counter Caches
+Offload to background jobs: email sending, external API calls, report generation, file processing, and any operation exceeding ~100ms.
 
-Avoid counting queries:
-
-```ruby
-# Migration
-add_column :users, :posts_count, :integer, default: 0
-User.find_each { |u| User.reset_counters(u.id, :posts) }
-
-# Model
-class Post < ApplicationRecord
-  belongs_to :user, counter_cache: true
-end
-
-# Usage
-user.posts_count  # No query!
-```
-
-## Pagination
-
-Always paginate large collections:
-
-```ruby
-# With Kaminari
-@users = User.page(params[:page]).per(25)
-
-# With Pagy (faster)
-@pagy, @users = pagy(User.all, items: 25)
-```
-
-## Asset Optimization
-
-### JavaScript and CSS
-
-```ruby
-# config/environments/production.rb
-config.assets.compile = false
-config.assets.digest = true
-config.assets.css_compressor = :sass
-config.assets.js_compressor = :terser
-```
-
-### Images
-
-```erb
-<%# Lazy loading %>
-<%= image_tag 'photo.jpg', loading: 'lazy' %>
-
-<%# With Active Storage variants %>
-<%= image_tag user.avatar.variant(resize_to_limit: [100, 100]) %>
-```
-
-## Profiling Tools
+## Profiling
 
 ### rack-mini-profiler
 
-```ruby
-# Gemfile
-gem 'rack-mini-profiler'
+Add a timing badge to every page showing SQL queries, rendering time, and memory:
 
-# Shows timing badge on each page
-# Press Alt+P to show/hide
+```ruby
+gem 'rack-mini-profiler'
+# Press Alt+P to show/hide. Append ?pp=flamegraph for flamegraphs.
 ```
 
-### Benchmark
+### Benchmark Comparisons
 
 ```ruby
-require 'benchmark'
-
-Benchmark.measure { User.all.to_a }
-
 Benchmark.bm do |x|
   x.report('includes') { User.includes(:posts).to_a }
-  x.report('preload') { User.preload(:posts).to_a }
+  x.report('preload')  { User.preload(:posts).to_a }
 end
 ```
 
-### Memory Profiler
-
-```ruby
-require 'memory_profiler'
-
-report = MemoryProfiler.report do
-  User.all.to_a
-end
-report.pretty_print
-```
+For MemoryProfiler, derailed_benchmarks, ActiveSupport::Notifications, and production monitoring setup, read `references/profiling-tools.md`.
 
 ## Performance Checklist
 
 ### Database
-- [ ] Indexes on foreign keys
-- [ ] Indexes on frequently queried columns
+
+- [ ] Indexes on foreign keys and frequently queried columns
 - [ ] No N+1 queries (use includes/preload)
-- [ ] Avoid SELECT * when possible
-- [ ] Use find_each for large datasets
+- [ ] Select only needed columns
+- [ ] `find_each` for large dataset processing
 - [ ] Pagination on all listings
 
 ### Caching
-- [ ] Fragment caching for complex views
+
+- [ ] Fragment caching for expensive view partials
 - [ ] Collection caching with `cached: true`
-- [ ] HTTP caching headers
-- [ ] Redis/Memcached in production
+- [ ] HTTP caching headers (stale?/expires_in)
+- [ ] Redis or Solid Cache in production
 
 ### Background Processing
+
 - [ ] Heavy operations in background jobs
 - [ ] Email sending async
 - [ ] External API calls async
 
-### Assets
-- [ ] Minified CSS/JS in production
-- [ ] Image optimization
-- [ ] CDN for static assets
+## Quick Reference
+
+| Problem         | Solution                   |
+| --------------- | -------------------------- |
+| N+1 queries     | `includes(:association)`   |
+| Slow counting   | Counter cache              |
+| Large datasets  | `find_each` + pagination   |
+| Slow views      | Fragment caching           |
+| Slow operations | Background jobs            |
+| Missing indexes | `add_index` migration      |
+| Heavy queries   | Select only needed columns |
 
 ## Additional Resources
 
 ### Reference Files
 
-For advanced optimization techniques, consult:
-- **`references/query-optimization.md`** - Advanced query patterns
-- **`references/caching-strategies.md`** - Detailed caching approaches
-
-## Quick Reference
-
-| Problem | Solution |
-|---------|----------|
-| N+1 queries | `includes(:association)` |
-| Slow counting | Counter cache |
-| Large datasets | `find_each` + pagination |
-| Slow views | Fragment caching |
-| Slow operations | Background jobs |
-| Missing indexes | `add_index` migration |
-| Heavy queries | Select only needed columns |
-
-Apply these optimizations to build fast, scalable Rails applications.
+For detailed patterns and techniques, consult:
+- **`references/eager-loading.md`** — N+1 detection, includes vs preload vs eager_load, Bullet gem, strict loading
+- **`references/database-optimization.md`** — Indexing strategies, EXPLAIN analysis, batch processing, bulk operations, counter caches
+- **`references/caching-strategies.md`** — Russian Doll caching, low-level cache keys, HTTP caching, cache store configuration, invalidation patterns
+- **`references/profiling-tools.md`** — rack-mini-profiler, Benchmark, MemoryProfiler, derailed_benchmarks, ActiveSupport::Notifications

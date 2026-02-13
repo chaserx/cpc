@@ -1,16 +1,28 @@
 ---
-name: Action Controller Patterns
-description: This skill should be used when the user asks about "Rails controllers", "routing", "before_action", "strong parameters", "params", "respond_to", "filters", or needs help implementing controller actions, routes, or request handling. Provides guidance on Rails controller patterns and best practices.
-version: 0.1.0
+name: action-controller-patterns
+description: This skill should be used when the user asks about "Rails controllers", "routing", "before_action", "strong parameters", "params", "respond_to", "filters", "rescue_from", "flash messages", "controller concerns", "nested routes", "namespaced routes", "Turbo Stream responses", "streaming responses", "thin controllers", or needs help implementing controller actions, routes, request handling, error handling, or response patterns. Provides guidance on Rails 7+ controller patterns and best practices.
 ---
 
 # Action Controller Patterns
 
 Guidance for implementing Rails controllers, routing, request handling, and response patterns for Rails 7+.
 
+## Quick Reference
+
+| Need                    | Solution                                   |
+| ----------------------- | ------------------------------------------ |
+| Load resource           | `before_action :set_resource`              |
+| Require login           | `before_action :authenticate_user!`        |
+| Whitelist params        | `params.require(:model).permit(...)`       |
+| Params (7.2+)           | `params.expect(model: [...])`              |
+| Multiple formats        | `respond_to` block                         |
+| Handle 404              | `rescue_from ActiveRecord::RecordNotFound` |
+| Custom route action     | `member` or `collection` route             |
+| Shared controller logic | Controller concern                         |
+
 ## Controller Structure
 
-### Basic Controller
+A well-structured controller follows RESTful conventions with callbacks for shared setup, authorization checks, and a private method for strong parameters. Keep actions focused on the request/response cycle.
 
 ```ruby
 class ArticlesController < ApplicationController
@@ -78,7 +90,10 @@ end
 
 ## Strong Parameters
 
+Strong parameters prevent mass-assignment vulnerabilities by whitelisting permitted attributes. Always define a private `*_params` method rather than permitting inline.
+
 ### Basic Usage
+
 ```ruby
 def user_params
   params.require(:user).permit(:name, :email, :password, :password_confirmation)
@@ -86,6 +101,9 @@ end
 ```
 
 ### Nested Attributes
+
+Permit nested attributes for `accepts_nested_attributes_for` associations. Include `:id` and `:_destroy` to support editing and removing nested records.
+
 ```ruby
 def order_params
   params.require(:order).permit(
@@ -97,6 +115,9 @@ end
 ```
 
 ### Rails 7.2+ expect Syntax
+
+The `params.expect` method provides stricter parameter filtering that raises on unexpected structures, preventing parameter injection attacks.
+
 ```ruby
 def user_params
   params.expect(user: [:name, :email, :password])
@@ -108,6 +129,9 @@ end
 ```
 
 ### Dynamic Permit
+
+Conditionally expand permitted attributes based on user roles or context.
+
 ```ruby
 def article_params
   permitted = [:title, :body]
@@ -118,7 +142,10 @@ end
 
 ## Before Actions (Filters)
 
+Filters run code before, after, or around controller actions. Use `before_action` for authentication, resource loading, and authorization. Scope filters with `only`, `except`, or `if`/`unless` to keep them targeted.
+
 ### Common Patterns
+
 ```ruby
 class ApplicationController < ActionController::Base
   before_action :authenticate_user!
@@ -138,6 +165,9 @@ end
 ```
 
 ### Conditional Filters
+
+Restrict filters to specific actions or conditions to avoid unnecessary processing.
+
 ```ruby
 class ArticlesController < ApplicationController
   before_action :authenticate_user!, except: [:index, :show]
@@ -153,6 +183,9 @@ end
 ```
 
 ### Skip Filters
+
+Override inherited filters in subclasses. Use sparingly — skipping authentication or CSRF protection requires careful consideration. See the `rails-security` skill for security implications.
+
 ```ruby
 class Api::BaseController < ApplicationController
   skip_before_action :verify_authenticity_token  # For API controllers
@@ -166,6 +199,9 @@ end
 ## Response Handling
 
 ### Respond To (Multiple Formats)
+
+Use `respond_to` to serve different formats from a single action. Rails selects the block matching the request's `Accept` header or URL format extension.
+
 ```ruby
 def show
   @article = Article.find(params[:id])
@@ -180,6 +216,9 @@ end
 ```
 
 ### Turbo Stream Responses (Rails 7+)
+
+Return Turbo Stream responses for in-place page updates without full reloads. Always provide an HTML fallback for non-Turbo requests. For comprehensive Turbo Stream patterns including broadcasts and frame targeting, see the `hotwire-patterns` skill.
+
 ```ruby
 def create
   @comment = @article.comments.build(comment_params)
@@ -196,6 +235,9 @@ end
 ```
 
 ### JSON Responses
+
+For dedicated API endpoints, render JSON directly. For full API controller patterns including serialization, versioning, and authentication, see the `rails-api-pro` agent.
+
 ```ruby
 def index
   @users = User.all
@@ -213,6 +255,9 @@ end
 ```
 
 ### Streaming Responses
+
+Stream large responses (CSV exports, reports) to avoid buffering the entire response in memory. Particularly useful for exports that iterate over large record sets.
+
 ```ruby
 def export
   headers['Content-Type'] = 'text/csv'
@@ -231,85 +276,30 @@ end
 
 ## Routing
 
-### Basic Resources
+Define RESTful routes with `resources` and scope them with namespaces, nesting, and constraints. For detailed routing patterns including nested resources, namespaces, constraints, and route concerns, see `references/routing-patterns.md`.
+
 ```ruby
 Rails.application.routes.draw do
-  resources :articles
-  resources :users, only: [:index, :show]
-  resources :sessions, only: [:new, :create, :destroy]
-end
-```
-
-### Nested Resources
-```ruby
-resources :articles do
-  resources :comments, only: [:create, :destroy]
-  resources :likes, only: [:create, :destroy], shallow: true
-end
-```
-
-### Member and Collection Routes
-```ruby
-resources :articles do
-  member do
-    post :publish
-    post :unpublish
-    get :preview
+  resources :articles do
+    resources :comments, only: [:create, :destroy]
+    member do
+      post :publish
+    end
+    collection do
+      get :search
+    end
   end
-  collection do
-    get :search
-    get :drafts
+
+  namespace :admin do
+    resources :users
   end
 end
-```
-
-### Namespaced Routes
-```ruby
-namespace :admin do
-  resources :users
-  resources :articles
-end
-
-namespace :api do
-  namespace :v1 do
-    resources :users, only: [:index, :show]
-  end
-end
-```
-
-### Constraints
-```ruby
-# Subdomain constraint
-constraints subdomain: 'api' do
-  resources :users
-end
-
-# Format constraint
-resources :articles, constraints: { format: 'json' }
-
-# Custom constraint
-constraints ->(req) { req.env['HTTP_USER_AGENT'] =~ /iPhone/ } do
-  resources :mobile_pages
-end
-```
-
-### Concerns
-```ruby
-concern :commentable do
-  resources :comments, only: [:create, :destroy]
-end
-
-concern :likeable do
-  resources :likes, only: [:create, :destroy]
-end
-
-resources :articles, concerns: [:commentable, :likeable]
-resources :photos, concerns: [:commentable, :likeable]
 ```
 
 ## Error Handling
 
-### Rescue From
+Use `rescue_from` in `ApplicationController` to handle exceptions consistently across the application. Map exception classes to handler methods that render appropriate responses for both HTML and JSON formats. See the `rails-security` skill for authorization error handling patterns.
+
 ```ruby
 class ApplicationController < ActionController::Base
   rescue_from ActiveRecord::RecordNotFound, with: :not_found
@@ -337,6 +327,8 @@ end
 
 ## Flash Messages
 
+Flash messages persist across a single redirect. Use `flash.now` when rendering (not redirecting) to avoid the message leaking into the next request.
+
 ```ruby
 def create
   @user = User.new(user_params)
@@ -354,7 +346,7 @@ redirect_to users_path, flash: { success: 'Welcome!' }
 
 ## Controller Concerns
 
-Extract shared behavior:
+Extract shared behavior into concerns when multiple controllers need the same functionality. Define a clear interface with abstract methods or configuration options.
 
 ```ruby
 # app/controllers/concerns/searchable.rb
@@ -387,14 +379,17 @@ end
 
 ## Keep Controllers Thin
 
-Move complex logic to:
-- **Service Objects**: Complex business operations
-- **Query Objects**: Complex database queries
-- **Form Objects**: Multi-model forms
-- **Presenters/Decorators**: View logic
+Controllers should only handle the request/response cycle — parsing params, calling domain logic, and choosing a response. Move complex logic out of controllers into dedicated objects:
+
+- **Service Objects** — Complex business operations spanning multiple models
+- **Query Objects** — Complex database queries with reusable scopes
+- **Form Objects** — Multi-model forms or forms with custom validation
+- **Presenters/Decorators** — View-specific logic and formatting
+
+For detailed patterns and implementation examples, see the `service-patterns` skill.
 
 ```ruby
-# Instead of complex controller logic
+# Delegate to a service object instead of inlining business logic
 def create
   result = CreateOrderService.new(current_user, order_params).call
 
@@ -408,24 +403,15 @@ def create
 end
 ```
 
+## Related Skills
+
+- **`service-patterns`** — Service objects, form objects, query objects, and interactors
+- **`hotwire-patterns`** — Turbo Frames, Turbo Streams, and Stimulus controllers
+- **`rails-security`** — Authentication, authorization, CSRF, and security best practices
+- **`rails-testing`** — Controller and request spec patterns
+
 ## Additional Resources
 
 ### Reference Files
 
-For advanced patterns and examples, consult:
-- **`references/routing-patterns.md`** - Advanced routing techniques
-- **`references/api-controllers.md`** - API controller patterns
-
-## Quick Reference
-
-| Need | Solution |
-|------|----------|
-| Load resource | `before_action :set_resource` |
-| Require login | `before_action :authenticate_user!` |
-| Whitelist params | `params.require(:model).permit(...)` |
-| Multiple formats | `respond_to` block |
-| Handle 404 | `rescue_from ActiveRecord::RecordNotFound` |
-| Custom route action | `member` or `collection` route |
-| Shared controller logic | Controller concern |
-
-Apply these patterns to create clean, maintainable Rails controllers.
+- **`references/routing-patterns.md`** — Detailed routing patterns including nested resources, namespaces, constraints, and route concerns

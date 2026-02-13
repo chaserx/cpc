@@ -15,7 +15,7 @@ A comprehensive Claude Code plugin for Ruby on Rails development, providing spec
 - **rails-migration-pro** - Database migrations and schema changes
 - **rails-debugger** - Debugging, troubleshooting, and N+1 detection
 
-### Skills (9)
+### Skills (10)
 - **rails-conventions** - Project structure and naming conventions
 - **active-record-patterns** - ActiveRecord query and association patterns
 - **action-controller-patterns** - Controller design patterns
@@ -24,6 +24,7 @@ A comprehensive Claude Code plugin for Ruby on Rails development, providing spec
 - **rails-performance** - Performance optimization techniques
 - **service-patterns** - Service objects, form objects, and interactors
 - **hotwire-patterns** - Turbo Frames, Turbo Streams, and Stimulus
+- **rails-antipatterns** - Common anti-patterns, code smells, and refactoring guidance
 - **mcp-tools-guide** - Guide to using the plugin's MCP tools
 
 ### Commands (4)

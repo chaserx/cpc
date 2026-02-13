@@ -1,7 +1,7 @@
 ---
 description: Run and analyze Rails tests
 argument-hint: [file-or-pattern]
-allowed-tools: Read, Grep, Bash(mise:*, rails:*, bundle:*, rspec:*, ruby:*)
+allowed-tools: Read, Grep, Bash(rails:*, bundle:*, rspec:*, ruby:*)
 ---
 
 Run Rails tests and analyze results.
@@ -16,24 +16,24 @@ If specific file or pattern provided ($ARGUMENTS is not empty):
 
 For RSpec:
 ```bash
-mise exec -- bundle exec rspec $ARGUMENTS
+bundle exec rspec $ARGUMENTS
 ```
 
 For Minitest:
 ```bash
-mise exec -- rails test $ARGUMENTS
+rails test $ARGUMENTS
 ```
 
 If no arguments provided, run the full test suite:
 
 For RSpec:
 ```bash
-mise exec -- bundle exec rspec
+bundle exec rspec
 ```
 
 For Minitest:
 ```bash
-mise exec -- rails test
+rails test
 ```
 
 After running tests:

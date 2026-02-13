@@ -1,252 +1,84 @@
 ---
-name: Active Record Patterns
-description: This skill should be used when the user asks about "Active Record", "model associations", "ActiveRecord queries", "database relationships", "model validations", "Rails scopes", "N+1 queries", or needs help designing or optimizing Rails models. Provides comprehensive guidance on ActiveRecord patterns and best practices.
-version: 0.1.0
+name: active-record-patterns
+description: This skill should be used when the user asks about "Active Record", "model associations", "ActiveRecord queries", "database relationships", "model validations", "Rails scopes", "N+1 queries", "define model callbacks", "set up counter caches", "bulk insert records", or needs help designing or optimizing Rails models. Provides comprehensive guidance on ActiveRecord patterns and best practices.
 ---
 
 # Active Record Patterns
 
 Guidance for designing and implementing ActiveRecord models with proper associations, validations, queries, and performance optimizations in Rails 7+.
 
-## Association Types
+## Associations
 
-### belongs_to
-The child side of a one-to-many or one-to-one relationship:
+ActiveRecord supports several association types. Always specify `:dependent` on `has_many` and `has_one`.
 
-```ruby
-class Post < ApplicationRecord
-  belongs_to :user                    # Required by default in Rails 5+
-  belongs_to :author, class_name: 'User', foreign_key: 'author_id'
-  belongs_to :category, optional: true  # Allow nil
-end
-```
+| Association                  | Use case                                          |
+| ---------------------------- | ------------------------------------------------- |
+| `belongs_to`                 | Child side of one-to-many or one-to-one           |
+| `has_many`                   | Parent side of one-to-many                        |
+| `has_one`                    | One-to-one relationship                           |
+| `has_many :through`          | Many-to-many with join model (preferred)          |
+| `has_and_belongs_to_many`    | Simple many-to-many without join model attributes |
+| Polymorphic (`as:`)          | Single association pointing to multiple models    |
+| Delegated type               | Rails 6.1+ alternative to STI                     |
 
-### has_many
-The parent side of a one-to-many relationship:
-
-```ruby
-class User < ApplicationRecord
-  has_many :posts, dependent: :destroy
-  has_many :comments, dependent: :destroy
-  has_many :active_posts, -> { where(published: true) }, class_name: 'Post'
-end
-```
-
-### has_one
-A one-to-one relationship:
-
-```ruby
-class User < ApplicationRecord
-  has_one :profile, dependent: :destroy
-  has_one :most_recent_post, -> { order(created_at: :desc) }, class_name: 'Post'
-end
-```
-
-### has_many :through
-Many-to-many with a join model:
-
-```ruby
-class User < ApplicationRecord
-  has_many :memberships, dependent: :destroy
-  has_many :teams, through: :memberships
-end
-
-class Membership < ApplicationRecord
-  belongs_to :user
-  belongs_to :team
-  # Can have additional attributes: role, joined_at, etc.
-end
-
-class Team < ApplicationRecord
-  has_many :memberships, dependent: :destroy
-  has_many :users, through: :memberships
-end
-```
-
-### has_and_belongs_to_many
-Simple many-to-many without join model attributes:
-
-```ruby
-class Post < ApplicationRecord
-  has_and_belongs_to_many :tags
-end
-
-class Tag < ApplicationRecord
-  has_and_belongs_to_many :posts
-end
-# Requires posts_tags join table (alphabetical order)
-```
-
-### Polymorphic Associations
-
-```ruby
-class Comment < ApplicationRecord
-  belongs_to :commentable, polymorphic: true
-end
-
-class Post < ApplicationRecord
-  has_many :comments, as: :commentable
-end
-
-class Photo < ApplicationRecord
-  has_many :comments, as: :commentable
-end
-```
-
-## Dependent Options
-
-Always specify `:dependent` for `has_many` and `has_one`:
-
-| Option | Behavior |
-|--------|----------|
-| `:destroy` | Calls destroy on each associated record (triggers callbacks) |
-| `:delete_all` | Deletes directly from database (no callbacks) |
-| `:nullify` | Sets foreign key to NULL |
-| `:restrict_with_error` | Prevents deletion if associated records exist |
-| `:restrict_with_exception` | Raises exception if associated records exist |
+For full code examples of each type, dependent options, and self-referential/delegated type patterns, consult **`references/associations.md`**.
 
 ## Validations
 
-### Presence and Uniqueness
-```ruby
-class User < ApplicationRecord
-  validates :email, presence: true,
-                    uniqueness: { case_sensitive: false },
-                    format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :name, presence: true, length: { minimum: 2, maximum: 100 }
-end
-```
+Apply validations to enforce data integrity at the model layer:
 
-### Numericality
-```ruby
-class Product < ApplicationRecord
-  validates :price, numericality: { greater_than: 0 }
-  validates :quantity, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-end
-```
+- **Presence/uniqueness** — `validates :email, presence: true, uniqueness: true`
+- **Format** — `format: { with: /pattern/ }`
+- **Numericality** — `numericality: { greater_than: 0 }`
+- **Length** — `length: { minimum: 5, maximum: 200 }`
+- **Conditional** — `if:` / `unless:` with method or lambda
+- **Custom** — `validate :method_name` for complex rules
+- **Contexts** — `on: :create` or custom contexts like `on: :registration`
 
-### Conditional Validations
-```ruby
-class Order < ApplicationRecord
-  validates :shipping_address, presence: true, if: :requires_shipping?
-  validates :credit_card, presence: true, unless: -> { payment_method == 'invoice' }
-end
-```
-
-### Custom Validations
-```ruby
-class User < ApplicationRecord
-  validate :password_complexity
-
-  private
-
-  def password_complexity
-    return if password.blank?
-    unless password.match?(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-      errors.add(:password, 'must include lowercase, uppercase, and digit')
-    end
-  end
-end
-```
+For detailed examples of each validation type, custom validator classes, and a complete options reference, consult **`references/validations.md`**.
 
 ## Scopes
 
-### Basic Scopes
+Define reusable query fragments as scopes. Scopes always return an `ActiveRecord::Relation`, making them chainable:
+
 ```ruby
 class Post < ApplicationRecord
   scope :published, -> { where(published: true) }
-  scope :draft, -> { where(published: false) }
   scope :recent, -> { order(created_at: :desc) }
-  scope :popular, -> { order(views_count: :desc) }
-end
-```
-
-### Parameterized Scopes
-```ruby
-class Post < ApplicationRecord
   scope :by_author, ->(user) { where(user: user) }
-  scope :created_after, ->(date) { where('created_at > ?', date) }
-  scope :with_tag, ->(tag) { joins(:tags).where(tags: { name: tag }) }
 end
-```
 
-### Chainable Scopes
-```ruby
-# Usage: Post.published.recent.by_author(user).limit(10)
+# Chain scopes together
 Post.published.recent.by_author(current_user).limit(10)
 ```
+
+Prefer scopes over class methods for simple query conditions.
 
 ## Query Optimization
 
 ### Preventing N+1 Queries
 
-**Problem:**
-```ruby
-# Triggers N+1 queries
-users = User.all
-users.each { |u| puts u.posts.count }  # SELECT for each user!
-```
+| Strategy     | Loads data? | Filter on assoc? | Best for                   |
+| ------------ | ----------- | ----------------- | -------------------------- |
+| `includes`   | Yes         | Yes (auto-picks)  | General-purpose eager load |
+| `preload`    | Yes         | No                | Large or multiple assocs   |
+| `eager_load` | Yes         | Yes               | Filtering on association   |
+| `joins`      | No          | Yes               | Filtering without loading  |
 
-**Solutions:**
+### Key Techniques
 
-```ruby
-# includes: Loads associations in separate query
-users = User.includes(:posts)
-users.each { |u| puts u.posts.size }  # No additional queries
+- **Select specific columns** — `User.select(:id, :name)` or `pluck(:email)`
+- **Batch processing** — `find_each` / `in_batches` for large datasets
+- **Bulk operations** — `insert_all` / `upsert_all` for mass writes (skip callbacks)
+- **Counter caches** — `belongs_to :user, counter_cache: true` to avoid COUNT queries
+- **Subqueries** — `User.where(id: Post.published.select(:user_id))`
+- **Existence checks** — `User.where(email: value).exists?` (stops at first match)
 
-# preload: Always separate queries (best for large associations)
-users = User.preload(:posts, :comments)
-
-# eager_load: Uses LEFT JOIN (needed for filtering on association)
-users = User.eager_load(:posts).where(posts: { published: true })
-
-# joins: For filtering only (doesn't load association)
-users = User.joins(:posts).where(posts: { published: true }).distinct
-```
-
-### Selecting Specific Columns
-```ruby
-# Load only what's needed
-users = User.select(:id, :name, :email)
-
-# With pluck for arrays
-emails = User.where(active: true).pluck(:email)
-
-# With pick for single values
-latest_id = User.order(created_at: :desc).pick(:id)
-```
-
-### Batch Processing
-```ruby
-# For large datasets, process in batches
-User.find_each(batch_size: 1000) do |user|
-  user.send_newsletter
-end
-
-# With in_batches for batch operations
-User.in_batches(of: 1000) do |users|
-  users.update_all(newsletter_sent: true)
-end
-```
-
-### Bulk Operations
-```ruby
-# insert_all: Skip validations and callbacks
-User.insert_all([
-  { email: 'a@example.com', name: 'A' },
-  { email: 'b@example.com', name: 'B' }
-])
-
-# upsert_all: Insert or update
-User.upsert_all(
-  [{ email: 'a@example.com', name: 'Updated A' }],
-  unique_by: :email
-)
-```
+For full code examples of all query patterns, consult **`references/query-patterns.md`**.
 
 ## Callbacks
 
-Use callbacks sparingly, only for model-centric operations:
+Use callbacks sparingly — only for model-centric operations:
 
 ```ruby
 class User < ApplicationRecord
@@ -254,51 +86,20 @@ class User < ApplicationRecord
   before_save :encrypt_password, if: :password_changed?
   after_create :send_welcome_email
   after_destroy :cleanup_associated_files
-
-  private
-
-  def normalize_email
-    self.email = email.downcase.strip if email.present?
-  end
 end
 ```
 
-### Callback Order
-1. `before_validation`
-2. `after_validation`
-3. `before_save`
-4. `before_create` / `before_update`
-5. `after_create` / `after_update`
-6. `after_save`
-7. `after_commit` / `after_rollback`
+**Callback order:** `before_validation` → `after_validation` → `before_save` → `before_create`/`before_update` → `after_create`/`after_update` → `after_save` → `after_commit`/`after_rollback`
 
-### When NOT to Use Callbacks
-- External API calls (use jobs instead)
-- Complex business logic (use services)
-- Sending emails (use jobs)
-- Creating audit logs (consider after_commit)
-
-## Counter Caches
-
-For frequently counted associations:
-
-```ruby
-# Migration
-add_column :users, :posts_count, :integer, default: 0
-User.find_each { |u| User.reset_counters(u.id, :posts) }
-
-# Model
-class Post < ApplicationRecord
-  belongs_to :user, counter_cache: true
-end
-
-# Usage
-user.posts_count  # No query!
-```
+**Avoid callbacks for:**
+- External API calls (use background jobs)
+- Complex business logic (use service objects)
+- Sending emails (use background jobs)
+- Audit logging (consider `after_commit` or a dedicated gem)
 
 ## Model Organization
 
-Organize model code consistently:
+Organize model code in a consistent order:
 
 ```ruby
 class User < ApplicationRecord
@@ -340,24 +141,23 @@ class User < ApplicationRecord
 end
 ```
 
+## Quick Reference
+
+| Need                  | Solution                         |
+| --------------------- | -------------------------------- |
+| Load association data | `includes(:association)`         |
+| Filter by association | `joins(:association).where(...)` |
+| Count without query   | Counter cache                    |
+| Process large dataset | `find_each` or `in_batches`      |
+| Bulk insert           | `insert_all`                     |
+| Custom validation     | `validate :method_name`          |
+| Reusable query        | `scope :name, -> { ... }`        |
+
 ## Additional Resources
 
 ### Reference Files
 
-For advanced patterns and detailed examples, consult:
-- **`references/query-patterns.md`** - Advanced query patterns
-- **`references/performance-tips.md`** - Performance optimization techniques
-
-## Quick Reference
-
-| Need | Solution |
-|------|----------|
-| Load association data | `includes(:association)` |
-| Filter by association | `joins(:association).where(...)` |
-| Count without query | Counter cache |
-| Process large dataset | `find_each` or `in_batches` |
-| Bulk insert | `insert_all` |
-| Custom validation | `validate :method_name` |
-| Reusable query | `scope :name, -> { ... }` |
-
-Apply these patterns to build efficient, maintainable ActiveRecord models.
+For detailed patterns and code examples, consult:
+- **`references/associations.md`** — Association types, dependent options, polymorphic, delegated types
+- **`references/validations.md`** — Validation patterns, custom validators, contexts, options reference
+- **`references/query-patterns.md`** — N+1 prevention, scopes, batching, bulk operations, counter caches

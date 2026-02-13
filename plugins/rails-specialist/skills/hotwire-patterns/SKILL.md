@@ -1,314 +1,60 @@
 ---
-name: Hotwire Patterns
-description: |
-  Comprehensive Hotwire patterns for Rails including Turbo Drive, Turbo Frames, Turbo Streams, Stimulus controllers, and ActionCable broadcasting. Use when implementing real-time updates, partial page navigation, or interactive UI without custom JavaScript.
-version: 0.1.0
+name: hotwire-patterns
+description: This skill should be used when the user asks to "add Turbo Frames", "create a Stimulus controller", "implement Turbo Streams", "set up ActionCable broadcasting", "add real-time updates", "use Hotwire", "add live updates", or mentions Turbo Drive, partial page navigation, or interactive UI without custom JavaScript.
 ---
 
 # Hotwire Patterns for Rails
 
 Hotwire (HTML Over The Wire) provides a modern approach to building interactive Rails applications with minimal JavaScript. It consists of Turbo (Drive, Frames, Streams) and Stimulus.
 
-## Stimulus Controllers
+## Component Overview
 
-### Basic Structure
+| Component             | Purpose                               | When to Use                                       |
+| --------------------- | ------------------------------------- | ------------------------------------------------- |
+| Turbo Drive           | Full page navigation without reload   | Default — enabled automatically                   |
+| Turbo Frames          | Independently updatable page sections | Inline editing, tabbed content, scoped navigation |
+| Turbo Streams         | Targeted DOM updates via CRUD actions | Multi-element updates from form submissions       |
+| ActionCable + Streams | Real-time server-pushed updates       | Chat, notifications, live dashboards              |
+| Stimulus              | Lightweight client-side behavior      | Toggles, form feedback, debounced search          |
 
-```javascript
-// app/javascript/controllers/search_controller.js
-import { Controller } from "@hotwired/stimulus"
+## Stimulus Essentials
 
-export default class extends Controller {
-  static targets = ["input", "results"]
-  static values = { url: String, debounce: { type: Number, default: 300 } }
-  static classes = ["active", "loading"]
+Stimulus controllers add client-side behavior to HTML elements using data attributes.
 
-  connect() {
-    // Called when controller connects to DOM
-  }
+### Naming Conventions
 
-  search() {
-    clearTimeout(this.timeout)
-    this.timeout = setTimeout(() => {
-      this.performSearch()
-    }, this.debounceValue)
-  }
+- `data-controller="search"` maps to `search_controller.js`
+- `data-search-target="input"` accesses `this.inputTarget`
+- `data-action="input->search#search"` calls `search()` method
+- `data-search-url-value="/api/search"` accesses `this.urlValue`
+- `data-search-active-class="highlighted"` accesses `this.activeClass`
 
-  performSearch() {
-    const query = this.inputTarget.value
-    // Perform search...
-  }
+Declare targets, values, and classes as static properties. Always implement `disconnect()` to clean up event listeners and timers.
 
-  disconnect() {
-    // Cleanup when controller disconnects
-    clearTimeout(this.timeout)
-  }
-}
-```
+## Turbo Frames Essentials
 
-### Stimulus Conventions
+Turbo Frames decompose pages into independently updatable sections. Key principles:
 
-- **Naming**: `data-controller="search"` maps to `search_controller.js`
-- **Targets**: `data-search-target="input"` accesses `this.inputTarget`
-- **Actions**: `data-action="input->search#search"` calls `search()` method
-- **Values**: `data-search-url-value="/api/search"` accesses `this.urlValue`
-- **Classes**: `data-search-active-class="highlighted"` accesses `this.activeClass`
+- Use `dom_id` helper for unique, meaningful frame IDs
+- Provide loading state content for lazy-loaded frames
+- Use `data-turbo-frame="_top"` to break out of frame scope
+- Wrap both show and edit views in the same frame tag for inline editing
 
-### Common Stimulus Patterns
+## Turbo Streams Actions
 
-**Toggle:**
-
-```javascript
-// app/javascript/controllers/toggle_controller.js
-import { Controller } from "@hotwired/stimulus"
-
-export default class extends Controller {
-  static targets = ["content"]
-  static classes = ["hidden"]
-
-  toggle() {
-    this.contentTarget.classList.toggle(this.hiddenClass)
-  }
-}
-```
-
-```erb
-<div data-controller="toggle" data-toggle-hidden-class="hidden">
-  <button data-action="click->toggle#toggle">Toggle</button>
-  <div data-toggle-target="content">Content here</div>
-</div>
-```
-
-**Form Submission Feedback:**
-
-```javascript
-// app/javascript/controllers/form_controller.js
-import { Controller } from "@hotwired/stimulus"
-
-export default class extends Controller {
-  static targets = ["submit"]
-
-  submitting() {
-    this.submitTarget.disabled = true
-    this.submitTarget.value = "Saving..."
-  }
-}
-```
-
-## Turbo Drive
-
-Turbo Drive intercepts link clicks and form submissions, replacing the `<body>` without full page reloads. It is enabled by default.
-
-### Opting Out
-
-```erb
-<%# Disable Turbo for a specific link %>
-<%= link_to "External", "https://example.com", data: { turbo: false } %>
-
-<%# Disable Turbo for a form %>
-<%= form_with model: @user, data: { turbo: false } do |form| %>
-  ...
-<% end %>
-```
-
-### Progress Bar
-
-```css
-/* Customize Turbo progress bar */
-.turbo-progress-bar {
-  height: 3px;
-  background-color: #3b82f6;
-}
-```
-
-## Turbo Frames
-
-Turbo Frames decompose pages into independently updatable sections.
-
-### Basic Frame
-
-```erb
-<%= turbo_frame_tag dom_id(@post) do %>
-  <div class="post-card">
-    <h2><%= @post.title %></h2>
-    <%= link_to "Edit", edit_post_path(@post) %>
-  </div>
-<% end %>
-```
-
-### Lazy Loading
-
-```erb
-<%# Loads content asynchronously after page render %>
-<%= turbo_frame_tag "comments",
-    src: post_comments_path(@post),
-    loading: :lazy do %>
-  <p>Loading comments...</p>
-<% end %>
-```
-
-### Breaking Out of Frames
-
-```erb
-<%# Navigate outside the frame %>
-<%= link_to "View Full Post", post_path(@post), data: { turbo_frame: "_top" } %>
-```
-
-### Frame in Edit View
-
-```erb
-<%# app/views/posts/edit.html.erb %>
-<%= turbo_frame_tag dom_id(@post) do %>
-  <%= form_with model: @post do |form| %>
-    <%= form.text_field :title %>
-    <%= form.submit "Save" %>
-    <%= link_to "Cancel", post_path(@post) %>
-  <% end %>
-<% end %>
-```
-
-## Turbo Streams
-
-Turbo Streams deliver page changes as a set of CRUD-like actions targeting DOM elements.
-
-### Stream Actions
-
-| Action | Description |
-|--------|-------------|
-| `append` | Add to end of container |
-| `prepend` | Add to beginning of container |
-| `replace` | Replace entire element |
-| `update` | Update content of element |
-| `remove` | Remove element |
-| `before` | Insert before element |
-| `after` | Insert after element |
-| `morph` | Morph element (Rails 7.1+) |
+| Action    | Description                        |
+| --------- | ---------------------------------- |
+| `append`  | Add to end of container            |
+| `prepend` | Add to beginning of container      |
+| `replace` | Replace entire element             |
+| `update`  | Update content of element          |
+| `remove`  | Remove element                     |
+| `before`  | Insert before element              |
+| `after`   | Insert after element               |
+| `morph`   | Morph element (Rails 7.1+)         |
 | `refresh` | Reload page via morph (Rails 7.1+) |
 
-### Controller Response
-
-```ruby
-# app/controllers/comments_controller.rb
-def create
-  @comment = @post.comments.build(comment_params)
-
-  respond_to do |format|
-    if @comment.save
-      format.turbo_stream
-      format.html { redirect_to @post }
-    else
-      format.turbo_stream {
-        render turbo_stream: turbo_stream.replace(
-          "new_comment",
-          partial: "comments/form",
-          locals: { comment: @comment }
-        )
-      }
-      format.html { render :new, status: :unprocessable_entity }
-    end
-  end
-end
-```
-
-### Stream Template
-
-```erb
-<%# app/views/comments/create.turbo_stream.erb %>
-<%= turbo_stream.append "comments" do %>
-  <%= render @comment %>
-<% end %>
-
-<%= turbo_stream.update "comment_count", @post.comments.count %>
-
-<%= turbo_stream.replace "new_comment" do %>
-  <%= render "comments/form", comment: Comment.new %>
-<% end %>
-```
-
-### Inline Streams (from controller)
-
-```ruby
-def destroy
-  @comment.destroy
-
-  respond_to do |format|
-    format.turbo_stream {
-      render turbo_stream: [
-        turbo_stream.remove(@comment),
-        turbo_stream.update("comment_count", @post.comments.count)
-      ]
-    }
-    format.html { redirect_to @post }
-  end
-end
-```
-
-## ActionCable Broadcasting
-
-For real-time updates pushed from the server without a request cycle.
-
-### Model Broadcasting
-
-```ruby
-# app/models/comment.rb
-class Comment < ApplicationRecord
-  belongs_to :post
-
-  after_create_commit -> {
-    broadcast_append_to post,
-      target: "comments",
-      partial: "comments/comment"
-  }
-
-  after_update_commit -> {
-    broadcast_replace_to post,
-      partial: "comments/comment"
-  }
-
-  after_destroy_commit -> {
-    broadcast_remove_to post
-  }
-end
-```
-
-### Subscribing in Views
-
-```erb
-<%# Subscribe to broadcasts %>
-<%= turbo_stream_from @post %>
-
-<div id="comments">
-  <%= render @post.comments %>
-</div>
-```
-
-### Custom Broadcasting
-
-```ruby
-# From anywhere in the application
-Turbo::StreamsChannel.broadcast_append_to(
-  "notifications_#{user.id}",
-  target: "notifications",
-  partial: "notifications/notification",
-  locals: { notification: notification }
-)
-```
-
-## Turbo Morphing (Rails 7.1+)
-
-Page refreshes that preserve DOM state using morphing instead of replacement:
-
-```erb
-<%# Enable page morphing in layout %>
-<%= turbo_refreshes_morpho_with :morph %>
-<%= turbo_refreshes_scroll_with :preserve %>
-```
-
-```ruby
-# Trigger a page refresh via morph
-respond_to do |format|
-  format.turbo_stream { render turbo_stream: turbo_stream.action(:refresh, "") }
-end
-```
+Respond with `format.turbo_stream` in controllers. Use `.turbo_stream.erb` templates for complex responses, or render inline for simple cases.
 
 ## Review Checklists
 
@@ -343,13 +89,23 @@ end
 
 ## Quick Reference
 
-| Need | Solution |
-|------|----------|
-| Navigate without reload | Turbo Drive (default) |
-| Update part of a page | Turbo Frames |
-| Multiple DOM updates | Turbo Streams |
-| Real-time server push | ActionCable + Turbo Streams |
-| Client-side behavior | Stimulus controller |
-| Form with live updates | Turbo Frame wrapping form |
-| Toast notifications | Turbo Stream append |
-| Infinite scroll | Turbo Frame with lazy loading |
+| Need                    | Solution                      |
+| ----------------------- | ----------------------------- |
+| Navigate without reload | Turbo Drive (default)         |
+| Update part of a page   | Turbo Frames                  |
+| Multiple DOM updates    | Turbo Streams                 |
+| Real-time server push   | ActionCable + Turbo Streams   |
+| Client-side behavior    | Stimulus controller           |
+| Form with live updates  | Turbo Frame wrapping form     |
+| Toast notifications     | Turbo Stream append           |
+| Infinite scroll         | Turbo Frame with lazy loading |
+
+## Additional Resources
+
+### Reference Files
+
+For detailed code examples and implementation patterns, consult:
+
+- **`references/stimulus-patterns.md`** — Stimulus controller examples (search, toggle, form feedback) and conventions table
+- **`references/turbo-frames-patterns.md`** — Turbo Frames examples (basic frames, lazy loading, inline editing, breaking out) and Turbo Drive configuration
+- **`references/turbo-streams-patterns.md`** — Turbo Streams controller responses, templates, inline streams, ActionCable model broadcasting, custom broadcasting, and morphing (Rails 7.1+)

@@ -1,8 +1,6 @@
 ---
-name: MCP Tools Guide for Rails Development
-description: |
-  Comprehensive guide to using the Rails MCP Server, Context7, and Ruby LSP MCP servers for Rails development. Covers tool discovery, codebase analysis, documentation lookup, and code intelligence. Use when you need detailed instructions on leveraging MCP tools.
-version: 0.1.0
+name: mcp-tools-guide
+description: This skill should be used when the user asks about "MCP tools", "Rails MCP server", "analyze models with MCP", "get schema", "get routes", "execute Ruby via MCP", "Context7 documentation lookup", "Ruby LSP", "resolve library ID", "query docs", "codebase analysis tools", or needs guidance on which MCP tool to use for a specific task. Covers Rails MCP Server tool discovery and execution, Context7 documentation queries, and Ruby LSP code intelligence.
 ---
 
 # MCP Tools Guide for Rails Development
@@ -15,11 +13,12 @@ The primary tool for Rails codebase analysis.
 
 ### Tool Discovery
 
-```
+```text
 mcp__rails__search_tools
 ```
 
 Returns available analyzers organized by category:
+
 - **models** — Model analysis, associations, validations
 - **database** — Schema, migrations, indexes
 - **routing** — Route analysis and listing
@@ -30,22 +29,22 @@ Returns available analyzers organized by category:
 
 ### Execute Analyzers
 
-```
+```text
 mcp__rails__execute_tool(tool_name: "tool_name", params: {...})
 ```
 
-| Tool | Purpose | Example Params |
-|------|---------|----------------|
-| `analyze_models` | Model associations, validations, scopes | `{ model_name: "User" }` (optional) |
-| `get_schema` | Database schema and indexes | `{}` |
-| `get_routes` | Application routing table | `{}` |
-| `analyze_controller` | Controller actions and filters | `{ controller_name: "UsersController" }` |
-| `list_files` | Find files by pattern | `{ pattern: "app/models/**/*.rb" }` |
-| `get_file` | Read a specific file | `{ path: "app/models/user.rb" }` |
+| Tool                 | Purpose                                 | Example Params                           |
+| -------------------- | --------------------------------------- | ---------------------------------------- |
+| `analyze_models`     | Model associations, validations, scopes | `{ model_name: "User" }` (optional)      |
+| `get_schema`         | Database schema and indexes             | `{}`                                     |
+| `get_routes`         | Application routing table               | `{}`                                     |
+| `analyze_controller` | Controller actions and filters          | `{ controller_name: "UsersController" }` |
+| `list_files`         | Find files by pattern                   | `{ pattern: "app/models/**/*.rb" }`      |
+| `get_file`           | Read a specific file                    | `{ path: "app/models/user.rb" }`         |
 
 ### Ruby Execution
 
-```
+```text
 mcp__rails__execute_ruby(code: "...")
 ```
 
@@ -88,7 +87,8 @@ Retrieves up-to-date documentation and code examples for any library.
 ### Workflow
 
 1. **Resolve library ID first:**
-   ```
+
+   ```text
    mcp__plugin_context7_context7__resolve-library-id(
      libraryName: "rails",
      query: "your question"
@@ -96,7 +96,7 @@ Retrieves up-to-date documentation and code examples for any library.
    ```
 
 2. **Query documentation:**
-   ```
+   ```text
    mcp__plugin_context7_context7__query-docs(
      libraryId: "/rails/rails",
      query: "your question"
@@ -113,24 +113,45 @@ Retrieves up-to-date documentation and code examples for any library.
 
 ### Common Library IDs
 
-| Library | ID |
-|---------|-----|
-| Rails | `/rails/rails` |
-| Ruby | `/ruby/ruby` |
+| Library     | ID                   |
+| ----------- | -------------------- |
+| Rails       | `/rails/rails`       |
+| Ruby        | `/ruby/ruby`         |
+| Devise      | `/heartcombo/devise` |
+| Pundit      | `/varvet/pundit`     |
+| RSpec       | `/rspec/rspec`       |
+| RSpec Rails | `/rspec/rspec-rails` |
 
 For other gems, always call `resolve-library-id` first.
 
 ## Ruby LSP
 
-Provides language-aware intelligence for Ruby code.
+Language-aware intelligence for Ruby code. Tools use the `mcp__ruby-lsp__` prefix.
 
-### Capabilities
+### Key Tools
 
-- **Go to definition** — Navigate to method, class, or module definitions
-- **Find references** — Locate all usages of a symbol across the codebase
-- **Type checking** — Infer and validate types
+```text
+mcp__ruby-lsp__definition(uri: "file:///path/to/file.rb", line: 10, character: 5)
+```
+
+Jump to the definition of a method, class, or module at a given position.
+
+```text
+mcp__ruby-lsp__references(uri: "file:///path/to/file.rb", line: 10, character: 5)
+```
+
+Find all usages of a symbol across the codebase.
+
+```text
+mcp__ruby-lsp__symbol(query: "UserPolicy")
+```
+
+Search for classes, modules, and methods by name across the workspace.
+
+### Other Capabilities
+
+- **Type checking** — Infer and validate types at a given position
 - **Intelligent completions** — Context-aware code suggestions
-- **Symbol search** — Find classes, modules, and methods by name
 - **Diagnostics** — Identify issues in Ruby code
 
 ### When to Use
@@ -138,17 +159,17 @@ Provides language-aware intelligence for Ruby code.
 - When Rails MCP tools don't provide enough detail about specific method implementations
 - When tracing method calls across the codebase
 - When investigating inheritance hierarchies or module mixins
-- When you need type information for complex Ruby code
+- When locating all callers of a method before refactoring
 
 ## Quick Reference
 
-| Need | Tool |
-|------|------|
-| Understand models/schema | Rails MCP: `analyze_models`, `get_schema` |
-| Check routes | Rails MCP: `get_routes` |
-| Analyze controllers | Rails MCP: `analyze_controller` |
-| Find files | Rails MCP: `list_files` |
-| Custom analysis | Rails MCP: `execute_ruby` |
-| Verify API docs | Context7: `resolve-library-id` + `query-docs` |
-| Navigate code | Ruby LSP: go-to-definition, find references |
-| Check types | Ruby LSP: type checking |
+| Need                     | Tool                                          |
+| ------------------------ | --------------------------------------------- |
+| Understand models/schema | Rails MCP: `analyze_models`, `get_schema`     |
+| Check routes             | Rails MCP: `get_routes`                       |
+| Analyze controllers      | Rails MCP: `analyze_controller`               |
+| Find files               | Rails MCP: `list_files`                       |
+| Custom analysis          | Rails MCP: `execute_ruby`                     |
+| Verify API docs          | Context7: `resolve-library-id` + `query-docs` |
+| Navigate code            | Ruby LSP: `definition`, `references`          |
+| Find symbols             | Ruby LSP: `symbol`                            |
