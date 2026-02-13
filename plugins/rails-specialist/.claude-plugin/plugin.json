@@ -7,9 +7,8 @@
     "email": "chase@southard.dev",
     "url": "https://southard.dev"
   },
-  "repository": "https://github.com/chaserx/claude-plugin-compendium/",
-  "category": "development",
-  "homepage": "https://github.com/chaserx/claude-plugin-compendium/tree/main/plugins/rails-specialist",
-  "tags": ["rails", "ruby", "active-record", "rspec", "minitest", "hotwire", "turbo"],
+  "repository": "https://github.com/chaserx/cpc/",
+  "homepage": "https://github.com/chaserx/cpc/tree/main/plugins/rails-specialist",
+  "keywords": ["rails", "ruby", "development"],
   "license": "MIT"
 }
