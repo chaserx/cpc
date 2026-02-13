@@ -14,9 +14,10 @@
         "name": "Chase Southard",
         "email": "chase@southard.dev"
       },
-      "category": "development",
-      "homepage": "https://github.com/chaserx/claude-plugin-compendium/tree/main/plugins/rails-specialist",
-      "tags": ["rails", "ruby", "active-record", "rspec", "minitest", "hotwire", "turbo"]
+      "homepage": "https://github.com/chaserx/cpc/tree/main/plugins/rails-specialist",
+      "repository": "https://github.com/chaserx/cpc/",
+      "license": "MIT",
+      "keywords": ["rails", "ruby", "development"]
     }
   ]
 }
