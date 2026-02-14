@@ -1,6 +1,6 @@
 ---
 name: rails-testing
-description: This skill should be used when the user asks about "Rails testing", "RSpec", "Minitest", "test coverage", "factories", "fixtures", "system tests", "request specs", "model specs", "shared examples", "WebMock", "VCR", or needs help writing or debugging tests in a Rails application.
+description: Use when writing or debugging tests in a Rails application, setting up test infrastructure, or choosing between RSpec and Minitest patterns. Also applies when creating factories, fixtures, shared examples, or mocking external services. Covers test strategy, framework detection, directory structure, and common patterns for all test types.
 ---
 
 # Rails Testing

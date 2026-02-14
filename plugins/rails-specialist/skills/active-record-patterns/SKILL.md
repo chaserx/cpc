@@ -1,6 +1,6 @@
 ---
 name: active-record-patterns
-description: This skill should be used when the user asks about "Active Record", "model associations", "ActiveRecord queries", "database relationships", "model validations", "Rails scopes", "N+1 queries", "define model callbacks", "set up counter caches", "bulk insert records", or needs help designing or optimizing Rails models. Provides comprehensive guidance on ActiveRecord patterns and best practices.
+description: Use when designing model associations, adding validations, writing complex queries, or organizing model code. Also applies when choosing between has_many :through and HABTM, optimizing queries with eager loading, or setting up callbacks and scopes. Covers associations, validations, query optimization, and model organization.
 ---
 
 # Active Record Patterns

@@ -1,6 +1,6 @@
 ---
 name: hotwire-patterns
-description: This skill should be used when the user asks to "add Turbo Frames", "create a Stimulus controller", "implement Turbo Streams", "set up ActionCable broadcasting", "add real-time updates", "use Hotwire", "add live updates", or mentions Turbo Drive, partial page navigation, or interactive UI without custom JavaScript.
+description: Use when adding interactive UI to a Rails application without custom JavaScript — inline editing, live updates, real-time notifications, or partial page navigation. Also applies when choosing between Turbo Frames, Turbo Streams, and Stimulus, or reviewing Hotwire implementation for correctness.
 ---
 
 # Hotwire Patterns for Rails

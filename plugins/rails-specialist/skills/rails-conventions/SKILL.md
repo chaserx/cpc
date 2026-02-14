@@ -1,6 +1,6 @@
 ---
 name: rails-conventions
-description: This skill should be used when the user asks about "Rails conventions", "Rails best practices", "Rails file structure", "Rails naming conventions", "The Rails Way", or needs guidance on how Rails applications should be organized. Also applies when working with any Rails files to ensure proper conventions are followed.
+description: Use when creating new Rails files, naming models/controllers/views, organizing directories, or when unsure about Rails naming conventions. Also applies when reviewing code for convention violations like incorrect pluralization, wrong file locations, or non-standard naming. Covers file structure, naming patterns for models, controllers, views, routes, jobs, mailers, and migrations.
 ---
 
 # Rails Conventions and Best Practices

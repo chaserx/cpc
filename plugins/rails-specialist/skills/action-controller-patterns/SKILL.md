@@ -1,6 +1,6 @@
 ---
 name: action-controller-patterns
-description: This skill should be used when the user asks about "Rails controllers", "routing", "before_action", "strong parameters", "params", "respond_to", "filters", "rescue_from", "flash messages", "controller concerns", "nested routes", "namespaced routes", "Turbo Stream responses", "streaming responses", "thin controllers", or needs help implementing controller actions, routes, request handling, error handling, or response patterns. Provides guidance on Rails 7+ controller patterns and best practices.
+description: Use when building or refactoring Rails controllers — structuring actions, defining routes, whitelisting parameters, or responding in multiple formats. Also applies when sharing logic across controllers with concerns, handling errors consistently, or adding Turbo Stream responses alongside HTML. Covers Rails 7+ patterns including params.expect.
 ---
 
 # Action Controller Patterns

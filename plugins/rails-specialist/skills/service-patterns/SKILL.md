@@ -1,6 +1,6 @@
 ---
 name: service-patterns
-description: This skill should be used when the user asks to "create a service object", "extract logic from controller", "refactor fat controller into services", "implement a form object", "wrap external API in a service", "add a query object", "implement multi-step transaction", or "add a Result object". Also relevant when discussing business logic organization, single responsibility in Rails, or moving logic out of models and controllers.
+description: Use when controller actions grow beyond simple CRUD, business logic spans multiple models, or operations involve external APIs or multi-step transactions. Also applies when deciding whether to extract a service object, form object, or query object. Covers the Callable concern, Result objects, and file organization patterns.
 ---
 
 # Rails Service Patterns

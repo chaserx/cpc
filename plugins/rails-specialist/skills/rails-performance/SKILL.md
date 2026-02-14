@@ -1,6 +1,6 @@
 ---
 name: rails-performance
-description: This skill should be used when the user asks about "Rails performance", "N+1 queries", "caching strategies", "database optimization", "slow queries", "database indexes", "Redis", "Memcached", "background jobs", "profiling", "page load time", "memory usage", "counter cache", or "query optimization". Covers eager loading, indexing, caching, background job offloading, pagination, and profiling tools.
+description: Use when encountering slow page loads, high database query counts, memory bloat, or when optimizing a Rails application. Also applies when choosing a caching strategy, adding database indexes, or deciding what to move to background jobs. Covers N+1 prevention, eager loading, indexing, caching, pagination, and profiling tools.
 ---
 
 # Rails Performance Optimization
@@ -163,6 +163,26 @@ end
 
 Offload to background jobs: email sending, external API calls, report generation, file processing, and any operation exceeding ~100ms.
 
+## Streaming Large Responses
+
+For large exports (CSV, JSON), stream the response to avoid buffering in memory:
+
+```ruby
+def export
+  headers['Content-Type'] = 'text/csv'
+  headers['Content-Disposition'] = 'attachment; filename="users.csv"'
+
+  self.response_body = Enumerator.new do |yielder|
+    yielder << "name,email\n"
+    User.find_each(batch_size: 1000) do |user|
+      yielder << "#{user.name},#{user.email}\n"
+    end
+  end
+end
+```
+
+Combine `find_each` (batch loading) with an `Enumerator` (streaming output) to export large datasets without memory bloat or request timeouts.
+
 ## Profiling
 
 ### rack-mini-profiler
@@ -207,6 +227,7 @@ For MemoryProfiler, derailed_benchmarks, ActiveSupport::Notifications, and produ
 - [ ] Heavy operations in background jobs
 - [ ] Email sending async
 - [ ] External API calls async
+- [ ] Large exports use streaming responses
 
 ## Quick Reference
 
@@ -219,6 +240,7 @@ For MemoryProfiler, derailed_benchmarks, ActiveSupport::Notifications, and produ
 | Slow operations | Background jobs            |
 | Missing indexes | `add_index` migration      |
 | Heavy queries   | Select only needed columns |
+| Large exports   | `find_each` + streaming    |
 
 ## Additional Resources
 

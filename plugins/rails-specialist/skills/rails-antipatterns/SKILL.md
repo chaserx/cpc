@@ -1,12 +1,6 @@
 ---
 name: rails-antipatterns
-description: >
-  This skill should be used when the user asks about "Rails anti-patterns",
-  "Rails code smells", "fat controller", "god object", "callback hell",
-  "N+1 queries", "Law of Demeter", "default_scope problems", "refactor this
-  Rails code", or "what's wrong with this code" in a Rails context. Also
-  applies when reviewing Rails code for quality issues or detecting
-  problematic patterns.
+description: Use when reviewing Rails code for quality issues, refactoring problematic code, or encountering symptoms like fat controllers, god models, callback chains with side effects, N+1 queries, logic-heavy views, or non-idempotent background jobs. Covers controller, model, query, view, job, and migration anti-patterns with bad/good examples and fixes.
 ---
 
 # Rails Anti-Patterns

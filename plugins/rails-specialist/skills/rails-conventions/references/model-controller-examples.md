@@ -42,6 +42,35 @@ class Employee < ApplicationRecord
 end
 ```
 
+### Single Table Inheritance (STI)
+
+All subclasses share the base class table. Rails stores the class name in a `type` column.
+
+```ruby
+# Table: vehicles (with a `type` string column)
+# app/models/vehicle.rb
+class Vehicle < ApplicationRecord
+  # shared behavior
+end
+
+# app/models/car.rb
+class Car < Vehicle
+  # Car-specific behavior
+end
+
+# app/models/truck.rb
+class Truck < Vehicle
+  # Truck-specific behavior
+end
+```
+
+- **Table**: `vehicles` (plural of the base class — shared by all subclasses)
+- **Type column**: `type` (string) — Rails sets this automatically
+- **Files**: Each subclass gets its own file in `app/models/` (`car.rb`, `truck.rb`)
+- **Migration**: `add_column :vehicles, :type, :string` (add index for query performance)
+
+Prefer STI when subclasses share the same columns. Use polymorphic associations or delegated types when schemas diverge significantly.
+
 ## Validation Patterns
 
 ```ruby

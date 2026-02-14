@@ -1,6 +1,6 @@
 ---
 name: rails-security
-description: This skill should be used when the user asks about "Rails security", "authentication", "authorization", "Devise", "Pundit", "CanCanCan", "CSRF", "XSS", "SQL injection", "secrets management", "secure coding", or needs help implementing secure Rails applications. Provides guidance on Rails security best practices.
+description: Use when implementing authentication, authorization, or hardening a Rails application against vulnerabilities. Also applies before deployment to verify security posture, or when reviewing code for mass assignment, XSS, SQL injection, or CSRF risks. Covers strong parameters, Devise, Pundit, security scanning, and deployment checklists.
 ---
 
 # Rails Security
@@ -25,6 +25,10 @@ end
 
 # Never do this:
 User.create(params[:user])  # Mass assignment vulnerability!
+
+# Never permit sensitive attributes without authorization:
+# BAD:  params.require(:user).permit(:name, :email, :admin, :role)
+# GOOD: Only permit :admin or :role after verifying the current user is authorized
 ```
 
 Nested attributes:

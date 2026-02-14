@@ -1,6 +1,6 @@
 ---
 name: mcp-tools-guide
-description: This skill should be used when the user asks about "MCP tools", "Rails MCP server", "analyze models with MCP", "get schema", "get routes", "execute Ruby via MCP", "Context7 documentation lookup", "Ruby LSP", "resolve library ID", "query docs", "codebase analysis tools", or needs guidance on which MCP tool to use for a specific task. Covers Rails MCP Server tool discovery and execution, Context7 documentation queries, and Ruby LSP code intelligence.
+description: Use when needing to analyze a Rails codebase programmatically — inspecting models, schemas, routes, or controllers. Also applies when looking up library documentation or tracing method definitions across files. Covers Rails MCP Server tools, Context7 documentation queries, and Ruby LSP code intelligence.
 ---
 
 # MCP Tools Guide for Rails Development
