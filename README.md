@@ -37,6 +37,22 @@ cpc/
 └── README.md
 ```
 
+## Installation
+
+### Claude Code (via Plugin Marketplace)
+
+1. Add this marketplace
+
+```shell
+/plugin marketplace add chaserx/cpc
+```
+
+2. Install the rails-specialist plugin from this marketplace:
+
+```shell
+/plugin install cpc@rails-specialist
+```
+
 ## Contributing
 
 [Contributions](CONTRIBUTING.md) are welcome. Each plugin lives in its own directory under `plugins/` and follows the Claude Code plugin structure with a `.claude-plugin/plugin.json` manifest.
