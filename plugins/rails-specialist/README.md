@@ -49,7 +49,7 @@ A comprehensive Claude Code plugin for Ruby on Rails development, providing spec
 # Install from marketplace
 
 /plugin install rails-specialist@claude-plugin-compendium 
-
+```
 
 ## MCP Server Setup
 
