@@ -46,12 +46,10 @@ A comprehensive Claude Code plugin for Ruby on Rails development, providing spec
 ## Installation
 
 ```bash
-# Install from repository
-claude plugin install --from https://github.com/chaserx/claude-plugin-compendium/tree/main/plugins/rails-specialist
+# Install from marketplace
 
-# Or install locally
-claude --plugin-dir /path/to/rails-specialist
-```
+/plugin install rails-specialist@claude-plugin-compendium 
+
 
 ## MCP Server Setup
 
